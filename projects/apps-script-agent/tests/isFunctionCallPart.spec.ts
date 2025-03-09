@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { isFunctionCallPart } from '../src/vertex' // Update the import path
+import { isFunctionCallPart } from '../src/vertex'
 import { type Content, type FunctionCallPart } from '@google-cloud/vertexai'
 
 describe('isFunctionCallPart', () => {
@@ -34,7 +34,6 @@ describe('isFunctionCallPart', () => {
     })
 
     it('returns false for empty object', () => {
-        const emptyPart = {}
-        expect(isFunctionCallPart(emptyPart)).toBe(false)
+        expect(isFunctionCallPart({})).toBe(false)
     })
 })
