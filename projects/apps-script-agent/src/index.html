@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gmail Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+      body { padding: 20px; }
+      .card-content { min-height: 120px; }
+      .pre-wrap { white-space: pre-wrap; }
+      #status { margin: 10px 0; }
+      .tab-content { padding: 20px 0; }
+      .label-chip { margin: 2px; }
+      .settings-section { margin-bottom: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col s12">
+          <h4>Gmail Assistant</h4>
+          <div id="status" class="hide"></div>
+
+          <div class="row">
+            <div class="col s12">
+              <ul class="tabs">
+                <li class="tab col s3"><a href="#dashboard" class="active">Dashboard</a></li>
+                <li class="tab col s3"><a href="#settings">Settings</a></li>
+                <li class="tab col s3"><a href="#history">History</a></li>
+                <li class="tab col s3"><a href="#help">Help</a></li>
+              </ul>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="col s12 tab-content">
+              <div class="row">
+                <div class="col s12 m6">
+                  <div class="card">
+                    <div class="card-content">
+                      <span class="card-title">Status</span>
+                      <p id="status-text">Gmail Assistant is ready to process your inbox.</p>
+                    </div>
+                    <div class="card-action">
+                      <a href="#" id="run-now" class="waves-effect waves-light btn">Process Inbox Now</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="col s12 m6">
+                  <div class="card">
+                    <div class="card-content">
+                      <span class="card-title">Statistics</span>
+                      <div id="stats">
+                        <p>Last run: <span id="last-run">Never</span></p>
+                        <p>Emails processed: <span id="emails-processed">0</span></p>
+                        <p>Actions taken: <span id="actions-taken">0</span></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col s12">
+                  <div class="card">
+                    <div class="card-content">
+                      <span class="card-title">Recent Activity</span>
+                      <div id="recent-activity" class="pre-wrap">No recent activity</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="col s12 tab-content">
+              <div class="settings-section">
+                <h5>General Settings</h5>
+                <div class="row">
+                  <div class="input-field col s12 m6">
+                    <input id="max-emails" type="number" min="1" max="100" value="50">
+                    <label for="max-emails">Maximum emails to process at once</label>
+                  </div>
+                  <div class="input-field col s12 m6">
+                    <select id="model-selection">
+                      <option value="gemini-2.0-flash-001" selected>Gemini 2.0 Flash</option>
+                      <option value="gemini-1.5-pro-001">Gemini 1.5 Pro</option>
+                      <option value="gemini-pro">Gemini Pro</option>
+                    </select>
+                    <label>AI Model</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-section">
+                <h5>Label Management</h5>
+                <div id="label-container" class="row">
+                  <!-- Labels will be displayed here -->
+                </div>
+                <div class="row">
+                  <div class="col s12">
+                    <a href="#" id="refresh-labels" class="btn-small">Refresh Labels</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-section">
+                <h5>Automation Schedule</h5>
+                <div class="row">
+                  <div class="input-field col s12 m6">
+                    <select id="schedule-frequency">
+                      <option value="none" selected>Manual Only</option>
+                      <option value="hourly">Hourly</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                    <label>Run Frequency</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col s12 center-align">
+                  <button id="save-settings" class="btn waves-effect waves-light">Save Settings</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history" class="col s12 tab-content">
+              <div class="row">
+                <div class="col s12">
+                  <table class="striped">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Email</th>
+                        <th>Actions Taken</th>
+                      </tr>
+                    </thead>
+                    <tbody id="history-body">
+                      <!-- History items will be inserted here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Help Tab -->
+            <div id="help" class="col s12 tab-content">
+              <div class="row">
+                <div class="col s12">
+                  <div class="card">
+                    <div class="card-content">
+                      <span class="card-title">About Gmail Assistant</span>
+                      <p>Gmail Assistant helps you manage your inbox using AI. It can:</p>
+                      <ul class="browser-default">
+                        <li>Sort and label your emails automatically</li>
+                        <li>Draft replies to important messages</li>
+                        <li>Prioritize messages based on content</li>
+                        <li>Search for related threads and context</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col s12">
+                  <div class="card">
+                    <div class="card-content">
+                      <span class="card-title">Available Labels</span>
+                      <div id="help-labels">
+                        <!-- Labels will be displayed here -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Materialize components
+        M.AutoInit();
+
+        // Load initial data
+        loadSettings();
+        loadLabels();
+        loadHistory();
+
+        // Set up event listeners
+        document.getElementById('run-now').addEventListener('click', runAssistant);
+        document.getElementById('save-settings').addEventListener('click', saveSettings);
+        document.getElementById('refresh-labels').addEventListener('click', loadLabels);
+      });
+
+      function showStatus(message, isError = false) {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = isError ? 'red-text' : 'green-text';
+        statusEl.classList.remove('hide');
+        setTimeout(() => statusEl.classList.add('hide'), 5000);
+      }
+
+      function loadSettings() {
+        google.script.run
+          .withSuccessHandler(function(settings) {
+            document.getElementById('max-emails').value = settings.maxEmails || 50;
+
+            const modelSelect = document.getElementById('model-selection');
+            if (modelSelect) {
+              for (let i = 0; i < modelSelect.options.length; i++) {
+                if (modelSelect.options[i].value === settings.model) {
+                  modelSelect.selectedIndex = i;
+                  break;
+                }
+              }
+            }
+
+            const scheduleSelect = document.getElementById('schedule-frequency');
+            if (scheduleSelect) {
+              for (let i = 0; i < scheduleSelect.options.length; i++) {
+                if (scheduleSelect.options[i].value === settings.scheduleFrequency) {
+                  scheduleSelect.selectedIndex = i;
+                  break;
+                }
+              }
+            }
+
+            document.getElementById('last-run').textContent = settings.lastRun || 'Never';
+            document.getElementById('emails-processed').textContent = settings.emailsProcessed || 0;
+            document.getElementById('actions-taken').textContent = settings.actionsTaken || 0;
+
+            // Reinitialize Materialize selects
+            M.FormSelect.init(document.querySelectorAll('select'));
+          })
+          .withFailureHandler(function(error) {
+            showStatus('Failed to load settings: ' + error, true);
+          })
+          .getSettings();
+      }
+
+      function loadLabels() {
+        google.script.run
+          .withSuccessHandler(function(labels) {
+            // Populate label container
+            const container = document.getElementById('label-container');
+            const helpLabels = document.getElementById('help-labels');
+            container.innerHTML = '';
+            helpLabels.innerHTML = '';
+
+            if (labels && labels.length > 0) {
+              labels.forEach(function(label) {
+                // Add to settings page
+                const chip = document.createElement('div');
+                chip.className = 'chip label-chip';
+                chip.textContent = label.name;
+                container.appendChild(chip);
+
+                // Add to help page
+                const helpChip = document.createElement('div');
+                helpChip.className = 'chip label-chip';
+                helpChip.textContent = label.name;
+                helpLabels.appendChild(helpChip);
+              });
+            } else {
+              container.innerHTML = '<p>No labels found.</p>';
+              helpLabels.innerHTML = '<p>No labels found.</p>';
+            }
+          })
+          .withFailureHandler(function(error) {
+            showStatus('Failed to load labels: ' + error, true);
+          })
+          .getLabels();
+      }
+
+      function loadHistory() {
+        google.script.run
+          .withSuccessHandler(function(history) {
+            const historyBody = document.getElementById('history-body');
+            historyBody.innerHTML = '';
+
+            if (history && history.length > 0) {
+              history.forEach(function(item) {
+                const row = document.createElement('tr');
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = new Date(item.timestamp).toLocaleString();
+                row.appendChild(dateCell);
+
+                const emailCell = document.createElement('td');
+                emailCell.textContent = item.subject || 'No subject';
+                row.appendChild(emailCell);
+
+                const actionsCell = document.createElement('td');
+                actionsCell.textContent = item.actions.join(', ');
+                row.appendChild(actionsCell);
+
+                historyBody.appendChild(row);
+              });
+            } else {
+              const row = document.createElement('tr');
+              const cell = document.createElement('td');
+              cell.colSpan = 3;
+              cell.textContent = 'No history available';
+              cell.style.textAlign = 'center';
+              row.appendChild(cell);
+              historyBody.appendChild(row);
+            }
+          })
+          .withFailureHandler(function(error) {
+            showStatus('Failed to load history: ' + error, true);
+          })
+          .getHistory();
+      }
+
+      function saveSettings() {
+        const settings = {
+          maxEmails: document.getElementById('max-emails').value,
+          model: document.getElementById('model-selection').value,
+          scheduleFrequency: document.getElementById('schedule-frequency').value
+        };
+
+        google.script.run
+          .withSuccessHandler(function() {
+            showStatus('Settings saved successfully');
+            loadSettings(); // Reload settings
+          })
+          .withFailureHandler(function(error) {
+            showStatus('Failed to save settings: ' + error, true);
+          })
+          .saveSettings(settings);
+      }
+
+      function runAssistant() {
+        document.getElementById('status-text').textContent = 'Processing your inbox...';
+        document.getElementById('run-now').disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            document.getElementById('status-text').textContent = 'Gmail Assistant is ready to process your inbox.';
+            document.getElementById('run-now').disabled = false;
+            showStatus('Successfully processed ' + result.emailsProcessed + ' emails');
+
+            // Update stats
+            document.getElementById('last-run').textContent = new Date().toLocaleString();
+            document.getElementById('emails-processed').textContent = result.emailsProcessed;
+            document.getElementById('actions-taken').textContent = result.actionsTaken;
+
+            // Update recent activity
+            document.getElementById('recent-activity').textContent = result.activity.join('\n');
+
+            // Refresh history
+            loadHistory();
+          })
+          .withFailureHandler(function(error) {
+            document.getElementById('status-text').textContent = 'Gmail Assistant is ready to process your inbox.';
+            document.getElementById('run-now').disabled = false;
+            showStatus('Error processing inbox: ' + error, true);
+          })
+          .runProcess();
+      }
+    </script>
+  </body>
+</html>
