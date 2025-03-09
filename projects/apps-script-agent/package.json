@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "build": "node build.js",
+		"test": "vitest",
     "check": "tsc --noEmit",
     "push": "clasp push -f"
   },
@@ -12,7 +13,8 @@
     "@google-cloud/vertexai": "^1.9.3",
     "@google/clasp": "^2.5.0",
     "@types/google-apps-script": "^1.0.97",
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "vitest": "^3.0.8"
   },
   "type": "module",
   "dependencies": {
