@@ -1,160 +1,162 @@
 import {
-  type Content,
-  type FunctionDeclaration,
-  type FunctionCallingMode,
-  type FunctionResponsePart,
-} from "@google-cloud/vertexai";
-import { serializeGmailAppThread } from "./helpers.js";
+    type Content,
+    type FunctionDeclaration,
+    type FunctionCallingMode,
+    type FunctionResponsePart,
+} from '@google-cloud/vertexai'
+import { serializeGmailAppThread } from './helpers.js'
 
-import { generate, isFunctionCallPart } from "./vertex.js";
-import { FUNCTIONS } from "./functions.js";
+import { generate, isFunctionCallPart } from './vertex.js'
+import { FUNCTIONS } from './functions.js'
 
 const SYSTEM_INSTRUCTION = {
-  role: "system",
-  parts: [
-    {
-      text: "You are an administrative assistant helping to manage my Gmail inbox.",
-    },
-    {
-      text: "Be sure you have enough context and search for related messages as necessary, try searching before other actions. Multiple actions should be taken. Do not repeat actions.",
-    },
-  ],
-};
+    role: 'system',
+    parts: [
+        {
+            text: 'You are an administrative assistant helping to manage my Gmail inbox.',
+        },
+        {
+            text: 'Be sure you have enough context and search for related messages as necessary, try searching before other actions. Multiple actions should be taken. Do not repeat actions.',
+        },
+    ],
+}
 
 const TOOLS = [
-  {
-    functionDeclarations: Object.values(FUNCTIONS).map(
-      (fn) => fn.declaration
-    ) as FunctionDeclaration[],
-  },
-];
+    {
+        functionDeclarations: Object.values(FUNCTIONS).map(
+            fn => fn.declaration
+        ) as FunctionDeclaration[],
+    },
+]
 
 function main_({ MODEL, PROJECT_ID }: { MODEL: string; PROJECT_ID: string }) {
-  const threads = GmailApp.getInboxThreads(0, 50);
+    const threads = GmailApp.getInboxThreads(0, 50)
 
-  console.log(JSON.stringify(TOOLS, null, 2));
+    console.log(JSON.stringify(TOOLS, null, 2))
 
-  for (const thread of threads) {
-    const contents: Content[] = [
-      {
-        role: "user",
-        parts: [
-          {
-            text: `Here is a email thread in my Gmail inbox, help me manage it:`,
-          },
-          {
-            text: serializeGmailAppThread(thread),
-          },
-        ],
-      },
-    ];
-
-    let isDone = false;
-
-    const functionCalls = Object.fromEntries(
-      Object.keys(FUNCTIONS).map((key) => [key, [] as any[]])
-    );
-
-    let shouldPlan = true;
-
-    while (!isDone) {
-      const allowedFunctionNames: string[] = Object.keys(FUNCTIONS).filter(
-        (key) => functionCalls[key].length === 0
-      );
-
-      let mode: FunctionCallingMode = "ANY" as FunctionCallingMode;
-
-      if (shouldPlan) {
-        contents.push({
-          role: "user",
-          parts: [
+    for (const thread of threads) {
+        const contents: Content[] = [
             {
-              text: `Generate a multistep plan for this email thread using only the available tools: ${JSON.stringify(
-                TOOLS
-              )}`,
+                role: 'user',
+                parts: [
+                    {
+                        text: `Here is a email thread in my Gmail inbox, help me manage it:`,
+                    },
+                    {
+                        text: serializeGmailAppThread(thread),
+                    },
+                ],
             },
-          ],
-        });
+        ]
 
-        // Only plan once
-        shouldPlan = false;
-        // Do not call any functions while planning
-        mode = "NONE" as FunctionCallingMode;
-        allowedFunctionNames.length = 0;
-      }
+        let isDone = false
 
-      const output = generate(
-        {
-          contents,
-          tools: TOOLS,
-          systemInstruction: SYSTEM_INSTRUCTION,
-          toolConfig: {
-            functionCallingConfig: {
-              mode,
-              // only call functions that we haven't called before
-              allowedFunctionNames,
-            },
-          },
-        },
-        { MODEL, PROJECT_ID }
-      );
+        const functionCalls = Object.fromEntries(
+            Object.keys(FUNCTIONS).map(key => [key, [] as any[]])
+        )
 
-      if (!output.candidates?.[0]) {
-        // Just for TypeScript
-        throw new Error("No candidates");
-      }
+        let shouldPlan = true
 
-      const { content } = output.candidates[0];
-      console.log(JSON.stringify(content, null, 2));
+        while (!isDone) {
+            const allowedFunctionNames: string[] = Object.keys(
+                FUNCTIONS
+            ).filter(key => functionCalls[key].length === 0)
 
-      // push the function call to the contents
-      contents.push(content);
+            let mode: FunctionCallingMode = 'ANY' as FunctionCallingMode
 
-      const functionReponsePart: FunctionResponsePart[] = content.parts
-        .filter(isFunctionCallPart)
-        .map((part) => {
-          const name = part.functionCall.name as keyof typeof FUNCTIONS;
-          const args = part.functionCall.args;
+            if (shouldPlan) {
+                contents.push({
+                    role: 'user',
+                    parts: [
+                        {
+                            text: `Generate a multistep plan for this email thread using only the available tools: ${JSON.stringify(
+                                TOOLS
+                            )}`,
+                        },
+                    ],
+                })
 
-          if (name === "doNothing") {
-            isDone = true;
-          }
+                // Only plan once
+                shouldPlan = false
+                // Do not call any functions while planning
+                mode = 'NONE' as FunctionCallingMode
+                allowedFunctionNames.length = 0
+            }
 
-          functionCalls[name].push(args);
-          const { fn, schema } = FUNCTIONS[name as keyof typeof FUNCTIONS];
+            const output = generate(
+                {
+                    contents,
+                    tools: TOOLS,
+                    systemInstruction: SYSTEM_INSTRUCTION,
+                    toolConfig: {
+                        functionCallingConfig: {
+                            mode,
+                            // only call functions that we haven't called before
+                            allowedFunctionNames,
+                        },
+                    },
+                },
+                { MODEL, PROJECT_ID }
+            )
 
-          if (!fn || !schema) {
-            throw new Error(`Function ${name} not defined`);
-          }
+            if (!output.candidates?.[0]) {
+                // Just for TypeScript
+                throw new Error('No candidates')
+            }
 
-          console.log(
-            `${thread.getFirstMessageSubject()} - Calling ${name} with ${JSON.stringify(args)}`
-          );
+            const { content } = output.candidates[0]
+            console.log(JSON.stringify(content, null, 2))
 
-          const content = fn(schema.parse(args) as any, {
-            thread,
-            threadId: thread.getId(),
-          });
+            // push the function call to the contents
+            contents.push(content)
 
-          return {
-            functionResponse: {
-              name,
-              response: {
-                content,
-              },
-            },
-          };
-        });
+            const functionReponsePart: FunctionResponsePart[] = content.parts
+                .filter(isFunctionCallPart)
+                .map(part => {
+                    const name = part.functionCall
+                        .name as keyof typeof FUNCTIONS
+                    const args = part.functionCall.args
 
-      if (functionReponsePart.length > 0) {
-        contents.push({
-          role: "user",
-          parts: functionReponsePart,
-        });
-      }
+                    if (name === 'doNothing') {
+                        isDone = true
+                    }
+
+                    functionCalls[name].push(args)
+                    const { fn, schema } =
+                        FUNCTIONS[name as keyof typeof FUNCTIONS]
+
+                    if (!fn || !schema) {
+                        throw new Error(`Function ${name} not defined`)
+                    }
+
+                    console.log(
+                        `${thread.getFirstMessageSubject()} - Calling ${name} with ${JSON.stringify(args)}`
+                    )
+
+                    const content = fn(schema.parse(args) as any, {
+                        thread,
+                        threadId: thread.getId(),
+                    })
+
+                    return {
+                        functionResponse: {
+                            name,
+                            response: {
+                                content,
+                            },
+                        },
+                    }
+                })
+
+            if (functionReponsePart.length > 0) {
+                contents.push({
+                    role: 'user',
+                    parts: functionReponsePart,
+                })
+            }
+        }
     }
-  }
 }
 
 // @ts-ignore
-globalThis.main_ = main_;
+globalThis.main_ = main_
